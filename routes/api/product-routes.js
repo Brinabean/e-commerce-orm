@@ -40,11 +40,11 @@ router.get("/:id", (req, res) => {
       },
       {
         model: Tag,
-        attributes: ["id", "tag_name"],
+        attributes: ["id"],
       },
     ],
   })
-    .then((dbProductData) => res.json(dbProductData))
+    .then((productTagIds) => res.json(productTagIds))
     .catch((err) => {
       console.log(err);
       res.status(500).json(err);
@@ -61,7 +61,13 @@ router.post("/", (req, res) => {
       tagIds: [1, 2, 3, 4]
     }
   */
-  Product.create(req.body)
+  Product.create(req.body, {
+    product_name: req.body.product_name,
+    price: req.body.price,
+    stock: req.body.stock,
+    category_id: req.body.stock,
+    tagIds: req.body.tag_id,
+  })
     .then((product) => {
       // if there's product tags, we need to create pairings to bulk create in the ProductTag model
       if (req.body.tagIds.length) {
@@ -76,6 +82,7 @@ router.post("/", (req, res) => {
       // if no product tags, just respond
       res.status(200).json(product);
     })
+    //productTagIds
     .then((productTagIds) => res.status(200).json(productTagIds))
     .catch((err) => {
       console.log(err);
@@ -87,11 +94,13 @@ router.post("/", (req, res) => {
 router.put("/:id", (req, res) => {
   // update product data
   Product.update(req.body, {
+    individualHooks: true,
     where: {
       id: req.params.id,
     },
   })
     .then((product) => {
+      res.status(200).json(product);
       // find all associated tags from ProductTag
       return ProductTag.findAll({ where: { product_id: req.params.id } });
     })
@@ -118,7 +127,8 @@ router.put("/:id", (req, res) => {
         ProductTag.bulkCreate(newProductTags),
       ]);
     })
-    .then((updatedProductTags) => res.json(updatedProductTags))
+    //productTagIds
+    .then((updatedProductTags) => res.status(200).json(updatedProductTags))
     .catch((err) => {
       // console.log(err);
       res.status(400).json(err);
@@ -132,12 +142,12 @@ router.delete("/:id", (req, res) => {
       id: req.params.id,
     },
   })
-    .then((dbProductData) => {
-      if (!dbPostData) {
+    .then((productTagIds) => {
+      if (!productTagIds) {
         res.status(404).json({ message: "No product found with this id" });
         return;
       }
-      res.json(dbProductData);
+      res.json(productTagIds);
     })
     .catch((err) => {
       console.log(err);
